@@ -20,6 +20,6 @@
     "dev": "next",
     "build": "next build",
     "heroku-postbuild": "next build",
-    "start": "next start"
+    "start": "next start -p $PORT"
   }
 }
