@@ -1,0 +1,25 @@
+{
+  "name": "yarn-downloads",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "net": "^1.0.2",
+    "next": "beta",
+    "react": "^15.6.1",
+    "react-dom": "^15.6.1",
+    "request": "^2.81.0",
+    "request-promise-native": "^1.0.4",
+    "tls": "^0.0.1"
+  },
+  "engines": {
+    "node": "7.10.0"
+  },
+  "scripts": {
+    "dev": "next",
+    "build": "next build",
+    "heroku-postbuild": "next build",
+    "start": "next start"
+  }
+}
