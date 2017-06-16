@@ -4,23 +4,15 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "fs": "^0.0.1-security",
-    "humanize-number": "^0.0.2",
-    "net": "^1.0.2",
-    "next": "beta",
-    "react": "^15.6.1",
-    "react-dom": "^15.6.1",
+    "ejs": "^2.5.6",
+    "express": "^4.15.3",
     "request": "^2.81.0",
-    "request-promise-native": "^1.0.4",
-    "tls": "^0.0.1"
+    "request-promise-native": "^1.0.4"
   },
   "engines": {
-    "node": "7.10.0"
+    "node": "8.1.1"
   },
   "scripts": {
-    "dev": "next",
-    "build": "next build",
-    "heroku-postbuild": "next build",
-    "start": "next start -p $PORT"
+    "start": "node server.js"
   }
 }
