@@ -38,6 +38,7 @@ export default class extends React.Component {
   render() {
     return <div className="parent">
       <Head>
+        <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
         <title>Yarn Stats</title>
       </Head>
       <h1>
