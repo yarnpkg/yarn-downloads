@@ -45,7 +45,7 @@ const getStats = cachePromise(async () => {
     yarnDownloads: yarnDownloads,
     percentage: Math.round(yarnDownloads / npmDownloads * 10000) / 100,
   };
-}, 60 * 1000);
+}, 60 * 1000 * 60);
 
 app.set('view engine', 'ejs');
 
