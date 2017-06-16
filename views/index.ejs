@@ -102,6 +102,10 @@
         z-index: 9999;
       }
 
+      #modal h2 {
+        letter-spacing: 1px;
+      }
+
       #modal {
         display: none;
         position: absolute;
@@ -167,7 +171,7 @@
     <div id="modal">
       <h1>About</h1>
 
-      <h2>How do you get Yarn download stats?</h2>
+      <h2>How do we get Yarn download stats?</h2>
       <p>Yarn by default downloads packages via <code>registry.yarnpkg.com</code> this is a proxy to npm hosted by <a href="https://cloudflare.com">Cloudflare</a>.</p>
 
       <h2>How are these stats calculated?</h2>
@@ -181,7 +185,7 @@
       <h1>
         <img class="logo" src="/logo.png" />
         <span class="sep">&#183;</span>
-        Last month
+        Packages in last month
       </h1>
       <div class="stat"><strong><%= yarnDownloads.toLocaleString() %></strong> yarn downloads</div>
       <div class="stat"><strong><%= percentage %>%</strong> of npm downloads</div>
