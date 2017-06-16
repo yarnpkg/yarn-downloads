@@ -23,7 +23,11 @@ const cachePromise = (producer, interval) => {
 
     if (hasExpired) {
       lastUpdatedAt = now;
-      return lastUpdatedPromise = producer();
+      return lastUpdatedPromise = producer().catch(err => {
+        lastUpdatedAt = null;
+        lastUpdatedPromise = null;
+        throw err;
+      });
     } else {
       return lastUpdatedPromise;
     }
@@ -52,6 +56,8 @@ app.set('view engine', 'ejs');
 app.get('/', (req, res) => {
   getStats().then(data => {
     res.render('index', data);
+  }, () => {
+    res.end('Server error');
   });
 });
 

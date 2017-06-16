@@ -192,154 +192,151 @@
     </div>
 
     <script>
-      const yarnDownloads = <%= yarnDownloads %>;
-      const npmPercentage = <%= percentage %>;
-      const npmPercentageWithoutYarn = 100 - npmPercentage;
-      const yarnStats = <%- JSON.stringify(cfStats.timeseries.map(data => {
-        return {
-          until: data.until,
-          downloads: data.requests.content_type['octet-stream'],
-        };
-      }).filter(data => !!data.downloads)); %>;
+      (function() {
+        const yarnDownloads = <%= yarnDownloads %>;
+        const npmPercentage = <%= percentage %>;
+        const npmPercentageWithoutYarn = 100 - npmPercentage;
+        const yarnStats = <%- JSON.stringify(cfStats.timeseries.map(data => {
+          return {
+            until: data.until,
+            downloads: data.requests.content_type['octet-stream'],
+          };
+        }).filter(data => !!data.downloads)); %>;
 
-      const canvas = document.getElementById('background');
-      const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('background');
+        const ctx = canvas.getContext('2d');
 
-      const SCALE = 2;
-      const DOT_SIZE = 10;
-      const TOP_INDENT = 30;
-      const FILL_COLOR = 'rgba(255, 255, 255, 0.2)';
-      const STROKE_COLOR = '#167dab';
-      const DOT_STROKE_COLOR = '#FFF';
-      const DOT_FILL_COLOR = '#167dab';
+        const SCALE = 2;
+        const DOT_SIZE = 10;
+        const TOP_INDENT = 30;
+        const FILL_COLOR = 'rgba(255, 255, 255, 0.2)';
+        const STROKE_COLOR = '#167dab';
+        const DOT_STROKE_COLOR = '#FFF';
+        const DOT_FILL_COLOR = '#167dab';
 
-      let points = [];
+        let points = [];
 
-      function draw() {
-        const height = window.innerHeight;
-        const width = window.innerWidth;
-        ctx.canvas.width = width * SCALE;
-        ctx.canvas.height = height * SCALE;
-        ctx.scale(SCALE, SCALE);
+        function draw() {
+          const height = window.innerHeight;
+          const width = window.innerWidth;
+          ctx.canvas.width = width * SCALE;
+          ctx.canvas.height = height * SCALE;
+          ctx.scale(SCALE, SCALE);
 
-        if (width < 1280) {
-          ctx.clearRect(0, 0, width, height);
-          return;
-        }
+          const highest = Math.max.apply(Math, yarnStats.map(data => data.downloads));
+          const heightRatio = height / highest;
 
-        const highest = Math.max.apply(Math, yarnStats.map(data => data.downloads));
-        const heightRatio = height / highest;
+          // width of each line
+          const span = width / yarnStats.length;
 
-        // width of each line
-        const span = width / yarnStats.length;
+          let prevTop = 0;
 
-        let prevTop = 0;
+          points = [];
 
-        points = [];
+          // fill
+          ctx.lineWidth = 5;
+          ctx.fillStyle = FILL_COLOR;
+          for (let i = 0; i < yarnStats.length; i++) {
+            const {downloads, until} = yarnStats[i];
 
-        // fill
-        ctx.lineWidth = 5;
-        ctx.fillStyle = FILL_COLOR;
-        for (let i = 0; i < yarnStats.length; i++) {
-          const {downloads, until} = yarnStats[i];
+            const fromLeft = i * span;
+            const toLeft = fromLeft + span;
 
-          const fromLeft = i * span;
-          const toLeft = fromLeft + span;
+            const toTop = (height - (downloads * heightRatio)) + TOP_INDENT;
+            const fromTop = prevTop || toTop;
 
-          const toTop = (height - (downloads * heightRatio)) + TOP_INDENT;
-          const fromTop = prevTop || toTop;
+            ctx.beginPath();
+            ctx.moveTo(fromLeft, fromTop);
+            ctx.lineTo(fromLeft, height);
+            ctx.lineTo(toLeft, height);
+            ctx.lineTo(toLeft, toTop);
+            ctx.fill();
 
-          ctx.beginPath();
-          ctx.moveTo(fromLeft, fromTop);
-          ctx.lineTo(fromLeft, height);
-          ctx.lineTo(toLeft, height);
-          ctx.lineTo(toLeft, toTop);
-          ctx.fill();
+            points.push({fromLeft, fromTop, toLeft, toTop, until, downloads});
 
-          points.push({fromLeft, fromTop, toLeft, toTop, until, downloads});
+            prevTop = toTop;
+          }
 
-          prevTop = toTop;
-        }
+          // add graph strokes
+          ctx.lineCap = 'round';
+          ctx.strokeStyle = STROKE_COLOR;
+          for (let {fromLeft, fromTop, toLeft, toTop} of points) {
+            ctx.beginPath();
+            ctx.moveTo(fromLeft, fromTop);
+            ctx.lineTo(toLeft, toTop);
+            ctx.stroke();
+          }
 
-        // add graph strokes
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = STROKE_COLOR;
-        for (let {fromLeft, fromTop, toLeft, toTop} of points) {
-          ctx.beginPath();
-          ctx.moveTo(fromLeft, fromTop);
-          ctx.lineTo(toLeft, toTop);
-          ctx.stroke();
-        }
-
-        // add graph dots
-        ctx.strokeStyle = DOT_STROKE_COLOR;
-        ctx.fillStyle = DOT_FILL_COLOR;
-        for (let i = 0; i < points.length - 1; i++) {
-          const {fromLeft, fromTop, toLeft, toTop} = points[i];
-          ctx.beginPath();
-          ctx.arc(toLeft, toTop, DOT_SIZE, 0, 2 * Math.PI);
-          ctx.fill();
-          ctx.stroke();
-        }
-      }
-
-      draw();
-
-      function pad(num) {
-        return num <= 9 ? '0' + num : num + '';
-      }
-
-      const tooltip = document.getElementById('tooltip');
-
-      window.addEventListener('mousemove', (e) => {
-        if (e.target === modal || e.target === modalOverlay) {
-          return;
-        }
-
-        for (const point of points) {
-          const x1 = point.toLeft - DOT_SIZE;
-          const x2 = point.toLeft + DOT_SIZE;
-
-          const y1 = point.toTop - DOT_SIZE;
-          const y2 = point.toTop + DOT_SIZE;
-
-          if (e.x >= x1 && e.x <= x2 && e.y >= y1 && e.y <= y2) {
-            const date = new Date(point.until);
-            let text = `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} - ${point.downloads.toLocaleString()}`;
-            tooltip.textContent = text;
-            tooltip.style.top = e.y + 'px';
-            tooltip.style.left = e.x + 'px';
-            tooltip.style.display = 'block';
-            return;
+          // add graph dots
+          ctx.strokeStyle = DOT_STROKE_COLOR;
+          ctx.fillStyle = DOT_FILL_COLOR;
+          for (let i = 0; i < points.length - 1; i++) {
+            const {fromLeft, fromTop, toLeft, toTop} = points[i];
+            ctx.beginPath();
+            ctx.arc(toLeft, toTop, DOT_SIZE, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
           }
         }
 
-        tooltip.style.display = 'none';
-      });
+        draw();
 
-      window.addEventListener('resize', draw);
-
-      const modal = document.getElementById('modal');
-      const modalOverlay = document.getElementById('modal-overlay');
-
-      const closeModal = () => {
-        modal.style.display = 'none';
-        modalOverlay.style.display = 'none';
-      };
-
-      document.body.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          closeModal();
+        function pad(num) {
+          return num <= 9 ? '0' + num : num + '';
         }
-      });
-      modalOverlay.addEventListener('click', closeModal);
 
-      const help = document.getElementById('help');
-      help.style.display = 'block';
-      help.addEventListener('click', () => {
-        modal.style.display = 'block';
-        modalOverlay.style.display = 'block';
-      });
+        const tooltip = document.getElementById('tooltip');
+
+        window.addEventListener('mousemove', (e) => {
+          if (e.target === modal || e.target === modalOverlay) {
+            return;
+          }
+
+          for (const point of points) {
+            const x1 = point.toLeft - DOT_SIZE;
+            const x2 = point.toLeft + DOT_SIZE;
+
+            const y1 = point.toTop - DOT_SIZE;
+            const y2 = point.toTop + DOT_SIZE;
+
+            if (e.x >= x1 && e.x <= x2 && e.y >= y1 && e.y <= y2) {
+              const date = new Date(point.until);
+              let text = `${date.getFullYear()}/${pad(date.getMonth() + 1)}/${pad(date.getDate())} - ${point.downloads.toLocaleString()}`;
+              tooltip.textContent = text;
+              tooltip.style.top = e.y + 'px';
+              tooltip.style.left = e.x + 'px';
+              tooltip.style.display = 'block';
+              return;
+            }
+          }
+
+          tooltip.style.display = 'none';
+        });
+
+        window.addEventListener('resize', draw);
+
+        const modal = document.getElementById('modal');
+        const modalOverlay = document.getElementById('modal-overlay');
+
+        const closeModal = () => {
+          modal.style.display = 'none';
+          modalOverlay.style.display = 'none';
+        };
+
+        document.body.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            closeModal();
+          }
+        });
+        modalOverlay.addEventListener('click', closeModal);
+
+        const help = document.getElementById('help');
+        help.style.display = 'block';
+        help.addEventListener('click', () => {
+          modal.style.display = 'block';
+          modalOverlay.style.display = 'block';
+        });
+      })();
     </script>
   </body>
 </html>
