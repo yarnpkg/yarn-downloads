@@ -1,3 +1,6 @@
+import Head from 'next/head';
+
+const humanize = require('humanize-number');
 const React = require('react');
 const request = require('request-promise-native');
 
@@ -10,45 +13,83 @@ const requestCF = url => request({
   },
 });
 
-const getPercentage = async () => {
+const getStats = async () => {
   const [cfData, npmData] = await Promise.all([
-    requestCF(`https://api.cloudflare.com/client/v4/zones/${process.env.CF_ZONE}/analytics/dashboard?since=-10080&continuous=true`),
-    request('https://api.npmjs.org/downloads/point/last-week')
+    requestCF(`https://api.cloudflare.com/client/v4/zones/${process.env.CF_ZONE}/analytics/dashboard?since=-43200&continuous=true`),
+    request('https://api.npmjs.org/downloads/point/last-month')
   ]).then(result => result.map(item => JSON.parse(item)));
 
   const yarnDownloads = cfData.result.totals.requests.content_type['octet-stream'];
   const npmDownloads = npmData.downloads;
-  return Math.round(yarnDownloads / npmDownloads * 10000) / 100;
+  return {
+    yarnDownloads,
+    percentage: Math.round(yarnDownloads / npmDownloads * 10000) / 100,
+  };
 };
 
 export default class extends React.Component {
   static async getInitialProps({req}) {
-    return {percentage: req ? await getPercentage() : 0};
+    return req ? await getStats() : {
+      percentage: 0,
+      yarnDownloads: 0,
+    };
   }
+
   render() {
     return <div className="parent">
-      <div className="child">{this.props.percentage}%</div>
+      <Head>
+        <title>Yarn Stats</title>
+      </Head>
+      <h1>
+        <img className='logo' src='/static/logo.png' />
+        <span className='sep'>&#183;</span>
+        Last month
+      </h1>
+      <div className="child"><strong>{humanize(this.props.yarnDownloads)}</strong> package downloads</div>
+      <div className="child"><strong>{this.props.percentage}%</strong> of npm downloads</div>
       <style jsx>{`
+        h1 {
+          line-height: 200px;
+          font-size: 60px;
+          margin: 0;
+          margin-bottom: 40px;
+        }
+
+        h1 .sep {
+          margin: 0 30px;
+        }
+
+        img.logo {
+          height: 200px;
+          vertical-align: middle;
+        }
+
         div.parent {
-          align-items: center;
+          text-align: center;
           bottom: 0;
-          display: flex;
-          justify-content: center;
           left: 0;
           position: absolute;
           right: 0;
-          top: 0;
+          top: 50%;
+          height: 420px;
+          margin-top: -210px;
         }
+
         div.child {
-          color: #fff;
-          font-family: -apple-system, system-ui, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-          font-size: 3.8em;
+          font-size: 50px;
+          line-height: 90px;
+          letter-spacing: 1.2px;
+        }
+
+        strong {
           font-weight: 700;
-          text-shadow: 5px 5px #1476A2;
         }
       `}</style>
       <style global jsx>{`
         body {
+          color: #fff;
+          text-shadow: 5px 5px #1476A2;
+          font-family: -apple-system, system-ui, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
           background: #2188b6;
         }
       `}</style>
